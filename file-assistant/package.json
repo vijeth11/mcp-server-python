@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@wonderwhy-er/desktop-commander": "^0.2.5",
+    "setup": "^0.0.3"
+  }
+}
