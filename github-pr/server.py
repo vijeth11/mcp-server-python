@@ -18,6 +18,33 @@ mcp = FastMCP("pr-agent")
 # PR template directory (shared across all modules)
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# Default PR templates
+DEFAULT_TEMPLATES = {
+    "bug.md": "Bug Fix",
+    "feature.md": "Feature",
+    "docs.md": "Documentation",
+    "refactor.md": "Refactor",
+    "test.md": "Test",
+    "performance.md": "Performance",
+    "security.md": "Security"
+}
+
+# Type mapping for PR templates
+TYPE_MAPPING = {
+    "bug": "bug.md",
+    "fix": "bug.md",
+    "feature": "feature.md",
+    "enhancement": "feature.md",
+    "docs": "docs.md",
+    "documentation": "docs.md",
+    "refactor": "refactor.md",
+    "cleanup": "refactor.md",
+    "test": "test.md",
+    "testing": "test.md",
+    "performance": "performance.md",
+    "optimization": "performance.md",
+    "security": "security.md"
+}
 
 # TODO: Replace these with your actual implementations
 
@@ -95,20 +122,45 @@ def find_git_root(start_path: Path) -> Path | None:
 @mcp.tool()
 async def get_pr_templates() -> str:
     """List available PR templates with their content."""
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Read templates from TEMPLATES_DIR"})
-
+    templates = [
+        {
+            "filename": filename,
+            "type": template_type,
+            "content": (TEMPLATES_DIR / filename).read_text()
+        }
+        for filename, template_type in DEFAULT_TEMPLATES.items()
+    ]
+    
+    return json.dumps(templates, indent=2)
 
 @mcp.tool()
 async def suggest_template(changes_summary: str, change_type: str) -> str:
     """Let Claude analyze the changes and suggest the most appropriate PR template.
     
     Args:
-        changes_summary: Your analysis of what the changes do
-        change_type: The type of change you've identified (bug, feature, docs, refactor, test, etc.)
+        changes_summary: Your analysis of what the changes do (type: string)
+        change_type: The type of change you've identified (bug, feature, docs, refactor, test, etc.) (type: string)
     """
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Map change_type to templates"})
+        # Get available templates
+    templates_response = await get_pr_templates.fn()
+    templates = json.loads(templates_response)
+    
+    # Find matching template
+    template_file = TYPE_MAPPING.get(change_type.lower(), "feature.md")
+    selected_template = next(
+        (t for t in templates if t["filename"] == template_file),
+        templates[0]  # Default to first template if no match
+    )
+    
+    suggestion = {
+        "recommended_template": selected_template,
+        "reasoning": f"Based on your analysis: '{changes_summary}', this appears to be a {change_type} change.",
+        "template_content": selected_template["content"],
+        "usage_hint": "Claude can help you fill out this template based on the specific changes in your PR."
+    }
+    
+    return json.dumps(suggestion, indent=2)
+    
 
 
 if __name__ == "__main__":

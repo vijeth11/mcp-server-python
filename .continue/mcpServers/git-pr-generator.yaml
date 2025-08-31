@@ -5,3 +5,9 @@ mcpServers:
   - name: pr-agent
     type: streamable-http
     url: http://0.0.0.0:8000/mcp
+
+actions:
+  - id: pr-agent_analyze_file_changes
+    name: "pr-agent_analyze_file_changes"
+    parameters:
+      max_diff_lines: 500
